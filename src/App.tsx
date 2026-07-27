@@ -115,7 +115,7 @@ export default function App() {
 
   if (studyMode) {
     return (
-      <div className="app">
+      <div className="app app--study">
         <StudyScreen
           title={studyMode.title}
           modeKey={studyMode.key}

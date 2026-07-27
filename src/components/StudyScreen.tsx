@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BlockMath } from "react-katex";
-import type { Flashcard } from "../data/flashcards";
-import { ProgressBar } from "./ProgressBar";
+import { chapters, type Flashcard } from "../data/flashcards";
 
 interface StudyScreenProps {
   title: string;
@@ -28,6 +27,10 @@ function randomise(cards: Flashcard[], avoidFirstId?: string) {
   return shuffled;
 }
 
+function twoDigits(value: number) {
+  return String(value).padStart(2, "0");
+}
+
 export function StudyScreen({
   title,
   modeKey,
@@ -46,34 +49,18 @@ export function StudyScreen({
   const [revealed, setRevealed] = useState(false);
 
   const current = order[index];
-  const sessionMemorised = order.filter((item) => memorised.has(item.id)).length;
 
   const goTo = useCallback(
     (nextIndex: number) => {
       if (order.length === 0) return;
-      const wrapped = (nextIndex + order.length) % order.length;
-      setIndex(wrapped);
+      const bounded = Math.min(Math.max(nextIndex, 0), order.length - 1);
+      if (bounded === index) return;
+      setIndex(bounded);
       setRevealed(false);
-      onPositionChange(modeKey, wrapped);
+      onPositionChange(modeKey, bounded);
     },
-    [modeKey, onPositionChange, order.length],
+    [index, modeKey, onPositionChange, order.length],
   );
-
-  const toggleShuffle = useCallback(() => {
-    const nextEnabled = !shuffleEnabled;
-    onShuffleChange(nextEnabled);
-    if (nextEnabled) {
-      setOrder(randomise(normalOrder, current?.id));
-      setIndex(0);
-      onPositionChange(modeKey, 0);
-    } else {
-      setOrder(normalOrder);
-      const normalIndex = Math.max(0, normalOrder.findIndex((item) => item.id === current?.id));
-      setIndex(normalIndex);
-      onPositionChange(modeKey, normalIndex);
-    }
-    setRevealed(false);
-  }, [current?.id, modeKey, normalOrder, onPositionChange, onShuffleChange, shuffleEnabled]);
 
   const reshuffle = useCallback(() => {
     onShuffleChange(true);
@@ -99,9 +86,7 @@ export function StudyScreen({
         event.preventDefault();
         goTo(index + 1);
       } else if (event.key.toLowerCase() === "m" && current) {
-        onMark(current.id, true);
-      } else if (event.key.toLowerCase() === "l" && current) {
-        onMark(current.id, false);
+        onMark(current.id, !memorised.has(current.id));
       } else if (event.key.toLowerCase() === "s") {
         reshuffle();
       }
@@ -109,7 +94,7 @@ export function StudyScreen({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [current, goTo, index, onMark, reshuffle]);
+  }, [current, goTo, index, memorised, onMark, reshuffle]);
 
   if (!current) {
     return (
@@ -123,106 +108,123 @@ export function StudyScreen({
   }
 
   const isMemorised = memorised.has(current.id);
-  const completion = order.length === 0 ? 0 : Math.round((sessionMemorised / order.length) * 100);
+  const chapterNumber = chapters.findIndex((chapter) => chapter.slug === current.chapterSlug) + 1;
+  const position = index + 1;
+  const progress = order.length === 0 ? 0 : (position / order.length) * 100;
 
   return (
-    <main className="study-shell">
+    <main className="study-shell" aria-label={`${title} study session`}>
       <header className="study-header">
         <button className="icon-button" onClick={onExit} aria-label="Return to dashboard">
           <span aria-hidden="true">←</span>
         </button>
+
         <div className="study-heading">
-          <span className="eyebrow">Study mode</span>
-          <h1>{title}</h1>
+          <span className="eyebrow">CH {twoDigits(Math.max(chapterNumber, 1))}</span>
+          <h1>{current.chapter}</h1>
         </div>
-        <button
-          className={`shuffle-button ${shuffleEnabled ? "is-active" : ""}`}
-          onClick={toggleShuffle}
-          aria-pressed={shuffleEnabled}
-        >
-          <span aria-hidden="true">↝</span>
-          {shuffleEnabled ? "Shuffled" : "Shuffle"}
-        </button>
+
+        <div className="study-count" aria-label={`Card ${position} of ${order.length}`}>
+          <strong>{twoDigits(position)}</strong>
+          <span>/</span>
+          <span>{twoDigits(order.length)}</span>
+        </div>
       </header>
 
-      <section className="session-progress" aria-label="Current study session">
-        <div>
-          <span>Card {index + 1} of {order.length}</span>
-          <span>{sessionMemorised} memorised · {completion}%</span>
-        </div>
-        <ProgressBar value={sessionMemorised} max={order.length} label="Session memorisation progress" compact />
-      </section>
+      <div className="study-progress" aria-hidden="true">
+        <span className="study-progress__track">
+          <span className="study-progress__fill" style={{ width: `${progress}%` }} />
+        </span>
+        <span className="study-progress__start" />
+        <span className="study-progress__end" />
+      </div>
 
       <button
         className={`flashcard ${revealed ? "is-revealed" : ""}`}
         onClick={() => setRevealed((value) => !value)}
-        aria-label={revealed ? "Hide answer" : "Reveal answer"}
+        aria-label={revealed ? "Show question" : "Reveal answer"}
+        aria-pressed={revealed}
       >
         <span className="flashcard__inner">
           <span className="flashcard__face flashcard__front">
-            <span className="card-position">{current.chapter}</span>
-            <span className="formula-title">{current.title}</span>
+            <span className="card-meta">
+              <span>{current.title}</span>
+              <span className={`card-status ${isMemorised ? "is-mastered" : ""}`}>
+                <i aria-hidden="true" />
+                {isMemorised ? "Mastered" : "Learning"}
+              </span>
+            </span>
+
             <span className="prompt">{current.question}</span>
-            <span className="reveal-hint"><kbd>Space</kbd> or tap to reveal</span>
+
+            <span className="reveal-hint">
+              <span aria-hidden="true">↻</span>
+              Tap to reveal answer
+            </span>
           </span>
+
           <span className="flashcard__face flashcard__back">
-            <span className="answer-label">Answer</span>
-            <span className="formula-display"><BlockMath math={current.formula} /></span>
-            <span className="answer-copy">{current.explanation}</span>
-            <span className="detail-grid">
-              {current.conditions && (
-                <span className="detail-box">
-                  <strong>Conditions</strong>
-                  <span>{current.conditions}</span>
-                </span>
-              )}
-              {current.commonMistake && (
-                <span className="detail-box detail-box--warning">
-                  <strong>Watch out</strong>
-                  <span>{current.commonMistake}</span>
-                </span>
-              )}
-              {current.example && (
-                <span className="detail-box detail-box--example">
-                  <strong>Example</strong>
-                  <span className="detail-math"><BlockMath math={current.example} /></span>
+            <span className="card-meta">
+              <span>Answer</span>
+              <span>{current.title}</span>
+            </span>
+
+            <span className="answer-content">
+              <span className="formula-display"><BlockMath math={current.formula} /></span>
+              <span className="answer-copy">{current.explanation}</span>
+
+              {(current.conditions || current.commonMistake || current.example) && (
+                <span className="answer-notes">
+                  {current.conditions && (
+                    <span><strong>Conditions</strong>{current.conditions}</span>
+                  )}
+                  {current.commonMistake && (
+                    <span><strong>Watch out</strong>{current.commonMistake}</span>
+                  )}
+                  {current.example && (
+                    <span className="answer-example">
+                      <strong>Example</strong>
+                      <span><BlockMath math={current.example} /></span>
+                    </span>
+                  )}
                 </span>
               )}
             </span>
-            <span className="reveal-hint">Tap to see the question</span>
+
+            <span className="reveal-hint">
+              <span aria-hidden="true">↻</span>
+              Tap to flip back
+            </span>
           </span>
         </span>
       </button>
 
-      <div className="rating-row" aria-label="Mark your confidence">
+      <nav className="study-controls" aria-label="Flashcard controls">
         <button
-          className={`rating-button rating-button--learning ${!isMemorised ? "is-selected" : ""}`}
-          onClick={() => onMark(current.id, false)}
-          aria-pressed={!isMemorised}
+          className="study-control study-control--nav"
+          onClick={() => goTo(index - 1)}
+          disabled={index === 0}
         >
-          <span className="rating-icon" aria-hidden="true">↻</span>
-          <span><strong>Still Learning</strong><small>Press L</small></span>
+          <span aria-hidden="true">←</span>
+          Prev
         </button>
         <button
-          className={`rating-button rating-button--memorised ${isMemorised ? "is-selected" : ""}`}
-          onClick={() => onMark(current.id, true)}
+          className={`study-control study-control--mastered ${isMemorised ? "is-active" : ""}`}
+          onClick={() => onMark(current.id, !isMemorised)}
           aria-pressed={isMemorised}
         >
-          <span className="rating-icon" aria-hidden="true">✓</span>
-          <span><strong>Memorised</strong><small>Press M</small></span>
+          <span aria-hidden="true">✓</span>
+          {isMemorised ? "Mastered" : "Mark mastered"}
         </button>
-      </div>
-
-      <nav className="card-navigation" aria-label="Flashcard navigation">
-        <button className="button button--secondary" onClick={() => goTo(index - 1)}>
-          <span aria-hidden="true">←</span> Previous
-        </button>
-        <button className="button button--secondary" onClick={() => goTo(index + 1)}>
-          Next <span aria-hidden="true">→</span>
+        <button
+          className="study-control study-control--nav"
+          onClick={() => goTo(index + 1)}
+          disabled={index === order.length - 1}
+        >
+          Next
+          <span aria-hidden="true">→</span>
         </button>
       </nav>
-
-      <p className="shortcut-hint">Keyboard: ← previous · → next · Space reveal · M memorised · L learning · S shuffle</p>
     </main>
   );
 }
