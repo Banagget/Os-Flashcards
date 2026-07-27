@@ -1701,3 +1701,34 @@ kbd {
     font-size: 0.84rem;
   }
 }
+
+/* iOS Safari needs the prefixed 3D properties to keep the hidden face from
+   showing through while the card is flipped. */
+.flashcard {
+  -webkit-perspective: 1500px;
+  perspective: 1500px;
+}
+
+.flashcard__inner {
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-backface-visibility: visible;
+  backface-visibility: visible;
+}
+
+.flashcard__face {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.flashcard__front {
+  -webkit-transform: rotateY(0deg) translateZ(1px);
+  transform: rotateY(0deg) translateZ(1px);
+}
+
+.flashcard__back {
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg) translateZ(1px);
+}
