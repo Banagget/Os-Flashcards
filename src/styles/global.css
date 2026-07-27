@@ -1283,27 +1283,27 @@ kbd {
   transition: width 280ms ease;
 }
 
-.study-progress__start,
-.study-progress__end {
+.study-progress__current,
+.study-progress__mastered {
   position: absolute;
   top: 50%;
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: var(--surface);
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
 }
 
-.study-progress__start {
-  left: 0;
+.study-progress__current {
+  z-index: 2;
   border: 3px solid var(--accent);
 }
 
-.study-progress__end {
-  right: 0;
-  width: 3px;
+.study-progress__mastered {
+  z-index: 1;
+  width: 4px;
   height: 13px;
-  border-radius: 2px;
+  border-radius: 3px;
   background: #efa936;
 }
 
@@ -1427,10 +1427,28 @@ kbd {
   margin: 0;
   align-self: center;
   font-family: "Manrope", sans-serif;
-  font-size: clamp(2rem, 5vw, 3.7rem);
+  font-size: clamp(1.45rem, 3.2vw, 2.35rem);
   font-weight: 700;
   line-height: 1.16;
   letter-spacing: -0.05em;
+}
+
+.prompt--math {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.prompt--math .katex-display {
+  margin: 0;
+  text-align: left;
+}
+
+.prompt--math .katex-display > .katex {
+  text-align: left;
+}
+
+.prompt--math .katex {
+  font-size: clamp(1.45rem, 3.2vw, 2.35rem);
 }
 
 .reveal-hint {
@@ -1503,7 +1521,7 @@ kbd {
 }
 
 .formula-display .katex {
-  font-size: clamp(1.35rem, 3.4vw, 2rem);
+  font-size: clamp(1.15rem, 2.7vw, 1.65rem);
 }
 
 .answer-copy {
@@ -1644,7 +1662,11 @@ kbd {
   }
 
   .prompt {
-    font-size: clamp(1.8rem, 8.8vw, 3rem);
+    font-size: clamp(1.35rem, 6.6vw, 2rem);
+  }
+
+  .prompt--math .katex {
+    font-size: clamp(1.3rem, 6.2vw, 1.9rem);
   }
 
   .answer-content {
@@ -1653,7 +1675,7 @@ kbd {
   }
 
   .formula-display .katex {
-    font-size: clamp(1.12rem, 5.4vw, 1.5rem);
+    font-size: clamp(1rem, 4.7vw, 1.3rem);
   }
 
   .answer-copy {

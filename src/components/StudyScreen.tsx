@@ -110,7 +110,7 @@ export function StudyScreen({
   const isMemorised = memorised.has(current.id);
   const chapterNumber = chapters.findIndex((chapter) => chapter.slug === current.chapterSlug) + 1;
   const position = index + 1;
-  const progress = order.length === 0 ? 0 : (position / order.length) * 100;
+  const progress = order.length <= 1 ? 0 : (index / (order.length - 1)) * 100;
 
   return (
     <main className="study-shell" aria-label={`${title} study session`}>
@@ -135,8 +135,18 @@ export function StudyScreen({
         <span className="study-progress__track">
           <span className="study-progress__fill" style={{ width: `${progress}%` }} />
         </span>
-        <span className="study-progress__start" />
-        <span className="study-progress__end" />
+        {order.map((card, cardIndex) =>
+          memorised.has(card.id) ? (
+            <span
+              className="study-progress__mastered"
+              style={{
+                left: `${order.length <= 1 ? 0 : (cardIndex / (order.length - 1)) * 100}%`,
+              }}
+              key={card.id}
+            />
+          ) : null,
+        )}
+        <span className="study-progress__current" style={{ left: `${progress}%` }} />
       </div>
 
       <button
@@ -155,7 +165,9 @@ export function StudyScreen({
               </span>
             </span>
 
-            <span className="prompt">{current.question}</span>
+            <span className={`prompt ${current.questionMath ? "prompt--math" : ""}`}>
+              {current.questionMath ? <BlockMath math={current.questionMath} /> : current.question}
+            </span>
 
             <span className="reveal-hint">
               <span aria-hidden="true">↻</span>

@@ -4,6 +4,7 @@ export interface Flashcard {
   chapterSlug: string;
   title: string;
   question: string;
+  questionMath?: string;
   formula: string;
   explanation: string;
   conditions?: string;
@@ -160,6 +161,7 @@ export const flashcards: Flashcard[] = [
     id: "index-fractional",
     title: "Fractional indices",
     question: "Express a^(m/n) using a root.",
+    questionMath: t`\text{Express }a^{m/n}\text{ using a root.}`,
     formula: t`a^{m/n}=\sqrt[n]{a^m}=\left(\sqrt[n]{a}\right)^m`,
     explanation: "The denominator gives the root; the numerator gives the power.",
     conditions: "For real values, take a ≥ 0 when n is even.",
@@ -448,6 +450,7 @@ export const flashcards: Flashcard[] = [
     id: "diff-exp-chain",
     title: "Exponential chain rule",
     question: "Differentiate e^{f(x)}.",
+    questionMath: t`\text{Differentiate }e^{f(x)}.`,
     formula: t`\frac{d}{dx}\left(e^{f(x)}\right)=f'(x)e^{f(x)}`,
     explanation: "The exponential remains unchanged and is multiplied by the derivative of its exponent.",
     example: t`\frac{d}{dx}e^{3x^2}=6xe^{3x^2}`,
@@ -584,6 +587,7 @@ export const flashcards: Flashcard[] = [
     id: "int-linear-exp",
     title: "Integrating e^(ax + b)",
     question: "Integrate e^(ax + b).",
+    questionMath: t`\text{Integrate }e^{ax+b}.`,
     formula: t`\int e^{ax+b}\,dx=\frac1a e^{ax+b}+C`,
     explanation: "Divide by the coefficient a from the derivative of the exponent.",
     conditions: "a ≠ 0.",
@@ -680,6 +684,7 @@ export const flashcards: Flashcard[] = [
     id: "explog-solve",
     title: "Solving an exponential equation",
     question: "Solve Ae^{kt} = B for t.",
+    questionMath: t`\text{Solve }Ae^{kt}=B\text{ for }t.`,
     formula: t`t=\frac{1}{k}\ln\left(\frac BA\right)`,
     explanation: "Isolate the exponential, take natural logarithms, then divide by k.",
     conditions: "A, B > 0 and k ≠ 0.",
