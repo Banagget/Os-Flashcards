@@ -101,14 +101,17 @@ export function StudyScreen({
       <main className="study-shell empty-state">
         <span className="completion-badge">All caught up</span>
         <h1>No cards in this review</h1>
-        <p>You have memorised every formula in this set. You can review them again from the dashboard.</p>
+        <p>You have memorised every card in this set. You can review them again from the dashboard.</p>
         <button className="button button--primary" onClick={onExit}>Return home</button>
       </main>
     );
   }
 
   const isMemorised = memorised.has(current.id);
-  const chapterNumber = chapters.findIndex((chapter) => chapter.slug === current.chapterSlug) + 1;
+  const chapterNumber =
+    chapters
+      .filter((chapter) => chapter.subject === current.subject)
+      .findIndex((chapter) => chapter.slug === current.chapterSlug) + 1;
   const position = index + 1;
   const progress = order.length <= 1 ? 0 : (index / (order.length - 1)) * 100;
 
@@ -156,23 +159,33 @@ export function StudyScreen({
         aria-pressed={revealed}
       >
         <span className="flashcard__inner">
-          <span className="flashcard__face flashcard__front">
-            <span className="card-meta">
-              <span>{current.title}</span>
-              <span className={`card-status ${isMemorised ? "is-mastered" : ""}`}>
-                <i aria-hidden="true" />
-                {isMemorised ? "Mastered" : "Learning"}
+          <span className={`flashcard__face flashcard__front ${current.questionImage ? "flashcard__front--image" : ""}`}>
+            {!current.questionImage && (
+              <span className="card-meta">
+                <span>{current.title}</span>
+                <span className={`card-status ${isMemorised ? "is-mastered" : ""}`}>
+                  <i aria-hidden="true" />
+                  {isMemorised ? "Mastered" : "Learning"}
+                </span>
               </span>
+            )}
+
+            <span className={`prompt ${current.questionImage ? "prompt--image" : current.questionMath ? "prompt--math" : ""}`}>
+              {current.questionImage ? (
+                <img src={new URL(current.questionImage, document.baseURI).toString()} alt={current.questionImageAlt ?? ""} />
+              ) : current.questionMath ? (
+                <BlockMath math={current.questionMath} />
+              ) : (
+                current.question
+              )}
             </span>
 
-            <span className={`prompt ${current.questionMath ? "prompt--math" : ""}`}>
-              {current.questionMath ? <BlockMath math={current.questionMath} /> : current.question}
-            </span>
-
-            <span className="reveal-hint">
-              <span aria-hidden="true">↻</span>
-              Tap to reveal answer
-            </span>
+            {!current.questionImage && (
+              <span className="reveal-hint">
+                <span aria-hidden="true">↻</span>
+                Tap to reveal answer
+              </span>
+            )}
           </span>
 
           <span className="flashcard__face flashcard__back">

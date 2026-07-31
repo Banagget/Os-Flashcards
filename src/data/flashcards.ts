@@ -1,10 +1,15 @@
+export type Subject = "amath" | "emath";
+
 export interface Flashcard {
   id: string;
+  subject: Subject;
   chapter: string;
   chapterSlug: string;
   title: string;
   question: string;
   questionMath?: string;
+  questionImage?: string;
+  questionImageAlt?: string;
   formula: string;
   explanation: string;
   conditions?: string;
@@ -15,9 +20,10 @@ export interface Flashcard {
 export interface Chapter {
   name: string;
   slug: string;
+  subject: Subject;
 }
 
-export const chapters: Chapter[] = [
+const amathChapters = [
   { name: "Algebraic Manipulation and Identities", slug: "algebraic-manipulation" },
   { name: "Quadratic Functions and Equations", slug: "quadratics" },
   { name: "Inequalities", slug: "inequalities" },
@@ -37,12 +43,18 @@ export const chapters: Chapter[] = [
   { name: "Exponential and Logarithmic Functions", slug: "exponential-logarithmic-functions" },
 ];
 
-type CardDetails = Omit<Flashcard, "chapter" | "chapterSlug">;
+export const chapters: Chapter[] = [
+  ...amathChapters.map((chapter) => ({ ...chapter, subject: "amath" as const })),
+  { name: "Angle Properties of Circles", slug: "angle-properties-circles", subject: "emath" },
+];
+
+type CardDetails = Omit<Flashcard, "subject" | "chapter" | "chapterSlug">;
 const t = String.raw;
 const card = (chapterSlug: string, details: CardDetails): Flashcard => ({
   ...details,
   chapterSlug,
   chapter: chapters.find((chapter) => chapter.slug === chapterSlug)?.name ?? chapterSlug,
+  subject: chapters.find((chapter) => chapter.slug === chapterSlug)?.subject ?? "amath",
 });
 
 export const flashcards: Flashcard[] = [
@@ -688,5 +700,96 @@ export const flashcards: Flashcard[] = [
     formula: t`t=\frac{1}{k}\ln\left(\frac BA\right)`,
     explanation: "Isolate the exponential, take natural logarithms, then divide by k.",
     conditions: "A, B > 0 and k ≠ 0.",
+  }),
+
+  card("angle-properties-circles", {
+    id: "emath-circle-centre-perpendicular-chord",
+    title: "Perpendicular from the centre to a chord",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/centre-perpendicular-chord.png",
+    questionImageAlt: "A perpendicular line from the centre of a circle to chord AB, dividing the chord equally",
+    formula: t`\text{Perpendicular from centre to chord}\Rightarrow\text{ chord bisected}`,
+    explanation: "The perpendicular drawn from the centre of a circle to a chord bisects the chord.",
+    conditions: "Conversely, a line from the centre that bisects a chord is perpendicular to the chord.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-equal-chords",
+    title: "Equal chords and distance from the centre",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/equal-chords.png",
+    questionImageAlt: "Two equal chords AB and PQ positioned at equal perpendicular distances from the centre O",
+    formula: t`AB=PQ\iff d(O,AB)=d(O,PQ)`,
+    explanation: "Equal chords are equidistant from the centre of a circle.",
+    conditions: "Conversely, chords that are equidistant from the centre are equal.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-angle-semicircle",
+    title: "Angle in a semicircle",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/semicircle.png",
+    questionImageAlt: "A triangle inscribed in a circle with its base as the diameter",
+    formula: t`\angle\text{ in a semicircle}=90^\circ`,
+    explanation: "An angle in a semicircle is a right angle.",
+    conditions: "The angle is subtended by a diameter at the circumference.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-angles-same-segment",
+    title: "Angles in the same segment",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/same-segment.png",
+    questionImageAlt: "Two equal angles at the circumference standing on the same chord",
+    formula: t`\text{The marked angles are equal.}`,
+    explanation: "Angles in the same segment are equal.",
+    conditions: "Both angles are subtended by the same chord or arc.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-angle-centre",
+    title: "Angle at the centre",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/centre-circumference.png",
+    questionImageAlt: "An angle x degrees at the circumference and 2x degrees at the centre",
+    formula: t`\angle\text{ at centre}=2\times\angle\text{ at circumference}`,
+    explanation: "The angle subtended by an arc at the centre is twice the angle subtended by the same arc at the circumference.",
+    conditions: "The two angles are subtended by the same arc.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-opposite-angles",
+    title: "Opposite angles in a cyclic quadrilateral",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/opposite-angles.png",
+    questionImageAlt: "A cyclic quadrilateral ABCD with opposite angles at B and D highlighted",
+    formula: t`\angle ABC+\angle ADC=180^\circ`,
+    explanation: "The sum of the opposite angles of a cyclic quadrilateral is 180°.",
+    conditions: "All four vertices lie on the circumference of the circle.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-tangent-perpendicular-radius",
+    title: "Tangent perpendicular to the radius",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/tangent-perpendicular-radius.png",
+    questionImageAlt: "A tangent touching a circle at P and perpendicular to radius OP",
+    formula: t`OP\perp\text{ tangent at }P`,
+    explanation: "A tangent to a circle is perpendicular to the radius drawn to the point of contact.",
+    conditions: "P is the point where the tangent touches the circle.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-equal-tangents",
+    title: "Tangents from an external point",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/equal-tangents.png",
+    questionImageAlt: "Two tangents PA and PB drawn from the same external point P",
+    formula: t`PA=PB`,
+    explanation: "Tangents drawn from the same external point to a circle are equal in length.",
+    conditions: "A and B are the two points of contact.",
+  }),
+  card("angle-properties-circles", {
+    id: "emath-circle-tangent-angle-bisector",
+    title: "Centre line bisects the angle between tangents",
+    question: "",
+    questionImage: "images/emath/angle-properties-circles/tangent-angle-bisector.png",
+    questionImageAlt: "Two tangents TA and TB with line TO bisecting the angle between them",
+    formula: t`\angle ATO=\angle BTO`,
+    explanation: "The line joining an external point to the centre of the circle bisects the angle between the two tangents.",
+    conditions: "TA and TB are tangents from the external point T.",
   }),
 ];

@@ -131,6 +131,52 @@ a:focus-visible {
   margin: 0 auto;
 }
 
+.subject-switcher {
+  width: fit-content;
+  margin: 20px auto 0;
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(170px, 1fr));
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 10px 30px rgba(32, 40, 82, 0.06);
+}
+
+.subject-switcher button {
+  min-height: 62px;
+  padding: 10px 22px;
+  display: grid;
+  gap: 2px;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.subject-switcher button strong {
+  color: var(--text);
+  font-family: "Manrope", sans-serif;
+  font-size: 1rem;
+}
+
+.subject-switcher button span {
+  font-size: 0.72rem;
+}
+
+.subject-switcher button.is-active {
+  background: var(--accent);
+  color: #e9ebff;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.subject-switcher button.is-active strong {
+  color: #ffffff;
+}
+
 .hero {
   min-height: 450px;
   padding: 62px 0 68px;
@@ -1362,6 +1408,11 @@ kbd {
   text-align: left;
 }
 
+.flashcard__front--image {
+  padding: clamp(20px, 4vw, 34px);
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .flashcard__front::before,
 .flashcard__front::after {
   content: none;
@@ -1449,6 +1500,26 @@ kbd {
 
 .prompt--math .katex {
   font-size: clamp(1.45rem, 3.2vw, 2.35rem);
+}
+
+.prompt--image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prompt--image img {
+  width: auto;
+  max-width: min(100%, 500px);
+  max-height: min(100%, 390px);
+  padding: clamp(12px, 2vw, 20px);
+  border: 1px solid #e7e9ef;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(29, 43, 74, 0.08);
+  object-fit: contain;
 }
 
 .reveal-hint {
@@ -1613,6 +1684,21 @@ kbd {
 }
 
 @media (max-width: 640px) {
+  .subject-switcher {
+    width: 100%;
+    margin-top: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .subject-switcher button {
+    min-height: 58px;
+    padding: 9px 13px;
+  }
+
+  .subject-switcher button span {
+    font-size: 0.64rem;
+  }
+
   .study-shell {
     width: min(100% - 24px, 920px);
     padding: 10px 0 14px;
@@ -1667,6 +1753,12 @@ kbd {
 
   .prompt--math .katex {
     font-size: clamp(1.3rem, 6.2vw, 1.9rem);
+  }
+
+  .prompt--image img {
+    max-height: min(100%, 340px);
+    padding: 10px;
+    border-radius: 18px;
   }
 
   .answer-content {
