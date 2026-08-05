@@ -4,7 +4,6 @@ import { ProgressBar } from "./components/ProgressBar";
 import { StudyScreen } from "./components/StudyScreen";
 
 type Theme = "light" | "dark";
-type ReviewFilter = "all" | "learning" | "memorised";
 
 interface SavedProgress {
   memorisedIds: string[];
@@ -57,7 +56,13 @@ export default function App() {
 
   const memorised = useMemo(() => new Set(progress.memorisedIds), [progress.memorisedIds]);
   const selectedSubject = progress.lastSelectedSubject;
-  const subjectName = selectedSubject === "amath" ? "A Math" : "E Math";
+  const subjectNames: Record<Subject, string> = {
+    amath: "A Math",
+    emath: "E Math",
+    chem: "Chem",
+  };
+  const subjectName = subjectNames[selectedSubject];
+  const unitName = selectedSubject === "chem" ? "topic" : "chapter";
   const subjectChapters = chapters.filter((chapter) => chapter.subject === selectedSubject);
   const subjectCards = flashcards.filter((item) => item.subject === selectedSubject);
   const subjectMemorised = subjectCards.filter((item) => memorised.has(item.id)).length;
@@ -79,19 +84,8 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const startFiltered = (filter: ReviewFilter) => {
-    const labels: Record<ReviewFilter, string> = {
-      all: "Master All Formulas",
-      learning: "Continue Learning",
-      memorised: "Review Memorised Formulas",
-    };
-    const cards =
-      filter === "all"
-        ? subjectCards
-        : subjectCards.filter((item) =>
-            filter === "memorised" ? memorised.has(item.id) : !memorised.has(item.id),
-          );
-    startStudy(`master-${selectedSubject}-${filter}`, labels[filter], cards);
+  const startAllCards = () => {
+    startStudy(`master-${selectedSubject}-all`, "Master All Cards", subjectCards);
   };
 
   const updateMark = (cardId: string, shouldMemorise: boolean) => {
@@ -145,9 +139,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <a href="#main" className="brand" aria-label="O-Level Math Flashcards home">
-          <span className="brand-mark">M²</span>
-          <span>Math Recall</span>
+        <a href="#main" className="brand" aria-label="O-Level Flashcards home">
+          <span className="brand-mark">R²</span>
+          <span>O-Level <span className="brand-accent">Flashcards</span></span>
         </a>
         <button
           className="theme-toggle"
@@ -162,7 +156,7 @@ export default function App() {
       </header>
 
       <main id="main" className="dashboard">
-        <nav className="subject-switcher" aria-label="Choose a mathematics subject">
+        <nav className="subject-switcher" aria-label="Choose a subject">
           <button
             className={selectedSubject === "amath" ? "is-active" : ""}
             onClick={() => setProgress((current) => ({ ...current, lastSelectedSubject: "amath" }))}
@@ -179,65 +173,44 @@ export default function App() {
             <strong>E Math</strong>
             <span>Elementary Mathematics</span>
           </button>
+          <button
+            className={selectedSubject === "chem" ? "is-active" : ""}
+            onClick={() => setProgress((current) => ({ ...current, lastSelectedSubject: "chem" }))}
+            aria-pressed={selectedSubject === "chem"}
+          >
+            <strong>Chem</strong>
+            <span>Chemistry</span>
+          </button>
         </nav>
 
-        <section className="hero">
-          <div className="hero__copy">
-            <span className="eyebrow">Singapore GCE O-Level · {subjectName}</span>
-            <h1>O-Level {subjectName}<br /><em>Flashcards</em></h1>
-            <p>
-              {selectedSubject === "amath"
-                ? "Memorise the formulas you need for the GCE O-Level examination."
-                : "Recognise the circle figure, then recall the matching angle property and statement."}
-            </p>
-          </div>
-          <div className="overall-card">
-            <div className="overall-card__top">
-              <span className="overall-label">Overall progress</span>
-              <span className="percentage-ring" style={{ "--progress": `${overallPercentage * 3.6}deg` } as React.CSSProperties}>
-                <strong>{overallPercentage}%</strong>
-              </span>
-            </div>
-            <div className="overall-number">
-              <strong>{subjectMemorised}</strong>
-              <span>of {subjectCards.length} cards memorised</span>
-            </div>
-            <ProgressBar value={subjectMemorised} max={subjectCards.length} label={`${subjectName} memorisation progress`} />
-            <p>{overallPercentage === 100 ? "Outstanding — every card is ready for review." : "A little progress every session adds up."}</p>
-          </div>
-        </section>
-
         <section className="quick-actions" aria-label="Study options">
-          <button className="master-card" onClick={() => startFiltered("all")}>
-            <span className="master-icon" aria-hidden="true">∞</span>
+          <button className="master-card" onClick={startAllCards}>
             <span className="master-copy">
               <span className="eyebrow">Complete collection</span>
               <strong>Master All {subjectName} Cards</strong>
-              <small>Study all {subjectCards.length} cards across {subjectChapters.length} {subjectChapters.length === 1 ? "chapter" : "chapters"}</small>
+              <small>Study all {subjectCards.length} cards across {subjectChapters.length} {subjectChapters.length === 1 ? unitName : `${unitName}s`}</small>
+            </span>
+            <span className="master-progress">
+              <span className="master-progress__heading">
+                <span>Overall progress</span>
+                <strong>{overallPercentage}%</strong>
+              </span>
+              <span className="master-progress__track" aria-hidden="true">
+                <span style={{ width: `${overallPercentage}%` }} />
+              </span>
+              <small>{subjectMemorised} of {subjectCards.length} cards memorised</small>
             </span>
             <span className="master-arrow" aria-hidden="true">→</span>
           </button>
-          <div className="action-grid">
-            <button className="action-card" onClick={() => startFiltered("learning")}>
-              <span className="action-icon action-icon--blue" aria-hidden="true">↻</span>
-              <span><strong>Continue Learning</strong><small>{subjectCards.length - subjectMemorised} cards to go</small></span>
-              <span aria-hidden="true">→</span>
-            </button>
-            <button className="action-card" onClick={() => startFiltered("memorised")}>
-              <span className="action-icon action-icon--green" aria-hidden="true">✓</span>
-              <span><strong>Review Memorised</strong><small>{subjectMemorised} cards ready</small></span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
         </section>
 
         <section className="chapter-section">
           <div className="section-heading">
             <div>
               <span className="eyebrow">Study by topic</span>
-              <h2>Choose a chapter</h2>
+              <h2>Choose a {unitName}</h2>
             </div>
-            <span>{subjectChapters.length} {subjectChapters.length === 1 ? "chapter" : "chapters"} · {subjectCards.length} cards</span>
+            <span>{subjectChapters.length} {subjectChapters.length === 1 ? unitName : `${unitName}s`} · {subjectCards.length} cards</span>
           </div>
 
           <div className="chapter-grid">
@@ -268,7 +241,7 @@ export default function App() {
                       startStudy(`chapter-${chapter.slug}`, chapter.name, chapterCards, chapter.slug)
                     }
                   >
-                    {complete ? "Review Chapter" : "Study Chapter"} <span aria-hidden="true">→</span>
+                    {complete ? `Review ${unitName}` : `Study ${unitName}`} <span aria-hidden="true">→</span>
                   </button>
                 </article>
               );
@@ -287,8 +260,8 @@ export default function App() {
       </main>
 
       <footer>
-        <span>Built for focused O-Level A Math and E Math recall.</span>
-        <span>Your progress stays on this device.</span>
+        <span>Built with React • TypeScript • CSS.</span>
+        <span>© 2026 ZHIYUAN • All rights reserved</span>
       </footer>
 
       {showReset && (

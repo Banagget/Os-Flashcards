@@ -47,8 +47,11 @@ export function StudyScreen({
   const [order, setOrder] = useState(() => (shuffleEnabled ? randomise(cards) : [...cards]));
   const [index, setIndex] = useState(() => Math.min(initialPosition, Math.max(cards.length - 1, 0)));
   const [revealed, setRevealed] = useState(false);
+  const [focusEnabled, setFocusEnabled] = useState(false);
 
   const current = order[index];
+  const unmasteredCards = normalOrder.filter((card) => !memorised.has(card.id));
+  const unmasteredCount = unmasteredCards.length;
 
   const goTo = useCallback(
     (nextIndex: number) => {
@@ -64,11 +67,72 @@ export function StudyScreen({
 
   const reshuffle = useCallback(() => {
     onShuffleChange(true);
-    setOrder(randomise(normalOrder, current?.id));
+    const activeCards = focusEnabled
+      ? normalOrder.filter((card) => !memorised.has(card.id))
+      : normalOrder;
+    setOrder(randomise(activeCards));
     setIndex(0);
     setRevealed(false);
     onPositionChange(modeKey, 0);
-  }, [current?.id, modeKey, normalOrder, onPositionChange, onShuffleChange]);
+  }, [focusEnabled, memorised, modeKey, normalOrder, onPositionChange, onShuffleChange]);
+
+  const toggleShuffle = useCallback(() => {
+    const nextEnabled = !shuffleEnabled;
+    const activeCards = focusEnabled ? unmasteredCards : normalOrder;
+    onShuffleChange(nextEnabled);
+
+    if (nextEnabled) {
+      setOrder(randomise(activeCards));
+      setIndex(0);
+      setRevealed(false);
+      onPositionChange(modeKey, 0);
+    } else {
+      setOrder(activeCards);
+      const restoredIndex = Math.max(0, activeCards.findIndex((card) => card.id === current?.id));
+      setIndex(restoredIndex);
+      onPositionChange(modeKey, restoredIndex);
+    }
+  }, [current?.id, focusEnabled, modeKey, normalOrder, onPositionChange, onShuffleChange, shuffleEnabled, unmasteredCards]);
+
+  const toggleFocus = useCallback(() => {
+    const nextEnabled = !focusEnabled;
+    const activeCards = nextEnabled ? unmasteredCards : normalOrder;
+    setFocusEnabled(nextEnabled);
+    setOrder(shuffleEnabled ? randomise(activeCards, current?.id) : activeCards);
+    setIndex(0);
+    setRevealed(false);
+    onPositionChange(modeKey, 0);
+  }, [current?.id, focusEnabled, modeKey, normalOrder, onPositionChange, shuffleEnabled, unmasteredCards]);
+
+  const resetSession = useCallback(() => {
+    setFocusEnabled(false);
+    onShuffleChange(false);
+    setOrder(normalOrder);
+    setIndex(0);
+    setRevealed(false);
+    onPositionChange(modeKey, 0);
+  }, [modeKey, normalOrder, onPositionChange, onShuffleChange]);
+
+  useEffect(() => {
+    if (!focusEnabled) return;
+    const nextOrder = order.filter((card) => !memorised.has(card.id));
+    if (nextOrder.length === order.length) return;
+
+    if (nextOrder.length === 0) {
+      setFocusEnabled(false);
+      setOrder(shuffleEnabled ? randomise(normalOrder) : normalOrder);
+      setIndex(0);
+      setRevealed(false);
+      onPositionChange(modeKey, 0);
+      return;
+    }
+
+    const nextIndex = Math.min(index, nextOrder.length - 1);
+    setOrder(nextOrder);
+    setIndex(nextIndex);
+    setRevealed(false);
+    onPositionChange(modeKey, nextIndex);
+  }, [focusEnabled, index, memorised, modeKey, normalOrder, onPositionChange, order, shuffleEnabled]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -123,7 +187,9 @@ export function StudyScreen({
         </button>
 
         <div className="study-heading">
-          <span className="eyebrow">CH {twoDigits(Math.max(chapterNumber, 1))}</span>
+          <span className="eyebrow">
+            {current.subject === "chem" ? "TOPIC" : "CH"} {twoDigits(Math.max(chapterNumber, 1))}
+          </span>
           <h1>{current.chapter}</h1>
         </div>
 
@@ -195,7 +261,9 @@ export function StudyScreen({
             </span>
 
             <span className="answer-content">
-              <span className="formula-display"><BlockMath math={current.formula} /></span>
+              {current.formula && (
+                <span className="formula-display"><BlockMath math={current.formula} /></span>
+              )}
               <span className="answer-copy">{current.explanation}</span>
 
               {(current.conditions || current.commonMistake || current.example) && (
@@ -224,32 +292,58 @@ export function StudyScreen({
         </span>
       </button>
 
-      <nav className="study-controls" aria-label="Flashcard controls">
-        <button
-          className="study-control study-control--nav"
-          onClick={() => goTo(index - 1)}
-          disabled={index === 0}
-        >
-          <span aria-hidden="true">←</span>
-          Prev
-        </button>
-        <button
-          className={`study-control study-control--mastered ${isMemorised ? "is-active" : ""}`}
-          onClick={() => onMark(current.id, !isMemorised)}
-          aria-pressed={isMemorised}
-        >
-          <span aria-hidden="true">✓</span>
-          {isMemorised ? "Mastered" : "Mark mastered"}
-        </button>
-        <button
-          className="study-control study-control--nav"
-          onClick={() => goTo(index + 1)}
-          disabled={index === order.length - 1}
-        >
-          Next
-          <span aria-hidden="true">→</span>
-        </button>
-      </nav>
+      <div className="study-action-stack">
+        <nav className="study-controls" aria-label="Flashcard controls">
+          <button
+            className="study-control study-control--nav"
+            onClick={() => goTo(index - 1)}
+            disabled={index === 0}
+          >
+            <span aria-hidden="true">←</span>
+            Prev
+          </button>
+          <button
+            className={`study-control study-control--mastered ${isMemorised ? "is-active" : ""}`}
+            onClick={() => onMark(current.id, !isMemorised)}
+            aria-pressed={isMemorised}
+          >
+            <span aria-hidden="true">✓</span>
+            {isMemorised ? "Mastered" : "Got it"}
+          </button>
+          <button
+            className="study-control study-control--nav"
+            onClick={() => goTo(index + 1)}
+            disabled={index === order.length - 1}
+          >
+            Next
+            <span aria-hidden="true">→</span>
+          </button>
+        </nav>
+
+        <div className="study-tools" aria-label="Study options">
+          <button
+            className={`study-tool ${shuffleEnabled ? "is-active" : ""}`}
+            onClick={toggleShuffle}
+            aria-pressed={shuffleEnabled}
+          >
+            <span aria-hidden="true">⇄</span>
+            {shuffleEnabled ? "Shuffled" : "Shuffle"}
+          </button>
+          <button
+            className={`study-tool study-tool--focus ${focusEnabled ? "is-active" : ""}`}
+            onClick={toggleFocus}
+            aria-pressed={focusEnabled}
+            disabled={!focusEnabled && unmasteredCount === 0}
+          >
+            <span aria-hidden="true">◎</span>
+            Focus · {unmasteredCount} left
+          </button>
+          <button className="study-tool" onClick={resetSession}>
+            <span aria-hidden="true">↶</span>
+            Reset
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
