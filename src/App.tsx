@@ -140,7 +140,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <a href="#main" className="brand" aria-label="O-Level Flashcards home">
-          <span className="brand-mark">R²</span>
+          <span className="brand-mark">R³</span>
           <span>O-Level <span className="brand-accent">Flashcards</span></span>
         </a>
         <button
