@@ -6,8 +6,8 @@ Published site: **https://banagget.github.io/Os-Flashcards/**
 
 ## Features
 
-- 17 chapter-based flashcard sets and a combined Master All mode
-- KaTeX-rendered mathematics with explanations, conditions, common mistakes and examples
+- 31 page-tagged A-Math flashcard sets and a combined Master All mode
+- KaTeX-rendered memorisation cards with concise answers and mathematical conditions
 - Continue Learning and Review Memorised modes
 - Persistent progress, position, shuffle preference and theme using `localStorage`
 - Fresh shuffle order without changing memorisation progress
@@ -48,11 +48,11 @@ The workflow in `.github/workflows/deploy.yml` builds and publishes `dist` with 
 Flashcards live in `src/data/flashcards.ts`. Each has:
 
 - a unique `id`
-- `chapter` and `chapterSlug`
+- page/topic tags through `chapter`, `chapterSlug` and `tags`
 - a `title` and front-side `question`
 - a KaTeX `formula`
 - an `explanation`
-- optional `conditions`, `commonMistake` and `example`
+- optional mathematical `conditions`
 
 Add new chapter metadata to the exported `chapters` array, then add cards using the matching slug. Use a stable ID because saved progress refers to card IDs.
 

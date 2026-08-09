@@ -1,8 +1,14 @@
 import { readFileSync } from "node:fs";
 import katex from "katex";
 
-const source = readFileSync(new URL("../src/data/flashcards.ts", import.meta.url), "utf8");
-const expressions = [...source.matchAll(/(?:formula|example): t`([^`]*)`/g)].map((match) => match[1]);
+const sources = [
+  readFileSync(new URL("../src/data/flashcards.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/data/amathMemorisation.ts", import.meta.url), "utf8"),
+  readFileSync(new URL("../src/data/nonAmathFlashcards.ts", import.meta.url), "utf8"),
+];
+const expressions = sources.flatMap((source) =>
+  [...source.matchAll(/t`([^`]*)`/g)].map((match) => match[1]),
+);
 const failures = [];
 
 for (const expression of expressions) {

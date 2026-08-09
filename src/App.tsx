@@ -19,6 +19,7 @@ interface StudyMode {
   key: string;
   title: string;
   cards: Flashcard[];
+  previous?: StudyMode;
 }
 
 const STORAGE_KEY = "amath-flashcards-progress-v1";
@@ -60,9 +61,11 @@ export default function App() {
     amath: "A Math",
     emath: "E Math",
     chem: "Chem",
+    phys: "Phys",
+    physicsKeywords: "Physics Keywords",
   };
   const subjectName = subjectNames[selectedSubject];
-  const unitName = selectedSubject === "chem" ? "topic" : "chapter";
+  const unitName = selectedSubject === "amath" ? "page" : selectedSubject === "chem" || selectedSubject === "phys" ? "topic" : "chapter";
   const subjectChapters = chapters.filter((chapter) => chapter.subject === selectedSubject);
   const subjectCards = flashcards.filter((item) => item.subject === selectedSubject);
   const subjectMemorised = subjectCards.filter((item) => memorised.has(item.id)).length;
@@ -78,6 +81,8 @@ export default function App() {
     setProgress((current) => ({
       ...current,
       lastSelectedChapter: chapterSlug,
+      shuffleEnabled: false,
+      positions: { ...current.positions, [key]: 0 },
       latestStudyDate: new Date().toISOString(),
     }));
     setStudyMode({ key, title, cards: [...cards] });
@@ -121,16 +126,26 @@ export default function App() {
     return (
       <div className="app app--study">
         <StudyScreen
+          key={studyMode.key}
           title={studyMode.title}
           modeKey={studyMode.key}
           cards={studyMode.cards}
           memorised={memorised}
-          initialPosition={progress.positions[studyMode.key] ?? 0}
           shuffleEnabled={progress.shuffleEnabled}
           onShuffleChange={(shuffleEnabled) => setProgress((current) => ({ ...current, shuffleEnabled }))}
           onPositionChange={updatePosition}
           onMark={updateMark}
-          onExit={() => setStudyMode(null)}
+          onOpenExamples={(card) => {
+            if (!card.examples?.length) return;
+            setStudyMode((current) => ({
+              key: `examples-${card.id}`,
+              title: `${card.title} Examples`,
+              cards: card.examples ?? [],
+              previous: current ?? undefined,
+            }));
+          }}
+          exitLabel={studyMode.previous ? "Return to keyword cards" : "Return to dashboard"}
+          onExit={() => setStudyMode((current) => current?.previous ?? null)}
         />
       </div>
     );
@@ -181,6 +196,22 @@ export default function App() {
             <strong>Chem</strong>
             <span>Chemistry</span>
           </button>
+          <button
+            className={selectedSubject === "phys" ? "is-active" : ""}
+            onClick={() => setProgress((current) => ({ ...current, lastSelectedSubject: "phys" }))}
+            aria-pressed={selectedSubject === "phys"}
+          >
+            <strong>Phys</strong>
+            <span>Physics</span>
+          </button>
+          <button
+            className={selectedSubject === "physicsKeywords" ? "is-active" : ""}
+            onClick={() => setProgress((current) => ({ ...current, lastSelectedSubject: "physicsKeywords" }))}
+            aria-pressed={selectedSubject === "physicsKeywords"}
+          >
+            <strong>Physics Keywords</strong>
+            <span>Decoded</span>
+          </button>
         </nav>
 
         <section className="quick-actions" aria-label="Study options">
@@ -218,8 +249,22 @@ export default function App() {
               const chapterCards = subjectCards.filter((item) => item.chapterSlug === chapter.slug);
               const chapterMemorised = chapterCards.filter((item) => memorised.has(item.id)).length;
               const complete = chapterMemorised === chapterCards.length;
+              const openChapter = () =>
+                startStudy(`chapter-${chapter.slug}`, chapter.name, chapterCards, chapter.slug);
               return (
-                <article className={`chapter-card ${complete ? "is-complete" : ""}`} key={chapter.slug}>
+                <article
+                  className={`chapter-card ${complete ? "is-complete" : ""}`}
+                  key={chapter.slug}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${complete ? "Review" : "Study"} ${unitName}: ${chapter.name}`}
+                  onClick={openChapter}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    openChapter();
+                  }}
+                >
                   <div className="chapter-card__top">
                     <span className="chapter-number">{String(chapterIndex + 1).padStart(2, "0")}</span>
                     {complete && <span className="completion-badge">Complete ✓</span>}
@@ -235,14 +280,6 @@ export default function App() {
                     label={`${chapter.name} progress`}
                     compact
                   />
-                  <button
-                    className="chapter-button"
-                    onClick={() =>
-                      startStudy(`chapter-${chapter.slug}`, chapter.name, chapterCards, chapter.slug)
-                    }
-                  >
-                    {complete ? `Review ${unitName}` : `Study ${unitName}`} <span aria-hidden="true">→</span>
-                  </button>
                 </article>
               );
             })}

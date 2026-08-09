@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
+    "validate:cards": "node scripts/validate-amath.mjs",
     "validate:formulas": "node scripts/validate-formulas.mjs",
     "preview": "vite preview"
   },

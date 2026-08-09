@@ -142,7 +142,7 @@ a:focus-visible {
   margin: 20px auto 0;
   padding: 6px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, minmax(110px, 1fr));
   gap: 6px;
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -346,12 +346,12 @@ a:focus-visible {
 
 .chapter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
 .chapter-card {
-  min-height: 275px;
+  min-height: 210px;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -359,6 +359,7 @@ a:focus-visible {
   border-radius: 22px;
   background: var(--surface);
   box-shadow: 0 8px 26px rgba(31, 39, 79, 0.035);
+  cursor: pointer;
   transition: transform 180ms ease, border-color 180ms ease;
 }
 
@@ -369,6 +370,11 @@ a:focus-visible {
 
 .chapter-card.is-complete {
   border-color: color-mix(in srgb, var(--green) 35%, var(--border));
+}
+
+.chapter-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 3px;
 }
 
 .chapter-card__top,
@@ -410,21 +416,6 @@ a:focus-visible {
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.chapter-button {
-  min-height: 44px;
-  margin-top: auto;
-  padding: 0;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  font-weight: 800;
-  text-align: left;
 }
 
 .progress-tools {
@@ -981,7 +972,8 @@ kbd {
   }
 
   .chapter-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .section-heading {
@@ -990,11 +982,28 @@ kbd {
   }
 
   .chapter-card {
-    min-height: 245px;
+    min-width: 0;
+    min-height: 180px;
+    padding: clamp(12px, 3.5vw, 18px);
+    border-radius: 17px;
   }
 
   .chapter-card h3 {
     min-height: 0;
+    margin: 14px 0 18px;
+    overflow-wrap: anywhere;
+    font-size: clamp(0.72rem, 3.1vw, 0.95rem);
+    line-height: 1.3;
+  }
+
+  .chapter-number {
+    font-size: clamp(0.62rem, 2.6vw, 0.74rem);
+  }
+
+  .chapter-stats {
+    gap: 5px;
+    font-size: clamp(0.58rem, 2.3vw, 0.72rem);
+    white-space: nowrap;
   }
 
   .progress-tools {
@@ -1382,6 +1391,32 @@ kbd {
   object-fit: contain;
 }
 
+.prompt--with-image {
+  height: 100%;
+  flex-direction: column;
+  gap: clamp(14px, 3vh, 24px);
+}
+
+.prompt--with-image .prompt-copy {
+  max-width: 760px;
+  font-size: clamp(1.15rem, 3.2vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+.prompt--with-image img {
+  max-height: min(58%, 310px);
+  padding: clamp(7px, 1.3vw, 12px);
+}
+
+.prompt--red {
+  color: #a33138;
+}
+
+.prompt--green {
+  color: #347342;
+}
+
 .reveal-hint {
   position: relative;
   z-index: 1;
@@ -1422,11 +1457,33 @@ kbd {
 .answer-content {
   width: 100%;
   max-width: 760px;
-  margin: auto;
-  padding: 28px 0;
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 28px 8px 28px 0;
+  box-sizing: border-box;
   display: grid;
-  align-content: center;
+  align-content: safe center;
+  justify-items: center;
   gap: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: center;
+}
+
+.answer-content--image {
+  height: 100%;
+  padding: 12px 0;
+  place-items: center;
+}
+
+.answer-content--image img {
+  width: auto;
+  max-width: min(100%, 500px);
+  max-height: min(100%, 460px);
+  border-radius: 18px;
+  background: #ffffff;
+  object-fit: contain;
 }
 
 .formula-display {
@@ -1439,16 +1496,16 @@ kbd {
   border-radius: 0;
   background: transparent;
   color: #ffffff;
-  text-align: left;
+  text-align: center;
 }
 
 .formula-display .katex-display {
   margin: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .formula-display .katex-display > .katex {
-  text-align: left;
+  text-align: center;
 }
 
 .formula-display .katex {
@@ -1456,12 +1513,18 @@ kbd {
 }
 
 .answer-copy {
+  width: 100%;
   max-width: 720px;
   color: #f4f6fc;
   font-size: var(--card-answer-size);
   line-height: 1.5;
   text-align: left;
   white-space: pre-line;
+}
+
+.answer-copy strong {
+  color: #ffffff;
+  font-weight: 850;
 }
 
 .answer-notes {
@@ -1594,10 +1657,25 @@ kbd {
 }
 
 @media (max-width: 640px) {
+  html:has(.app--study),
+  body:has(.app--study) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .app--study {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .subject-switcher {
     width: 100%;
     margin-top: 10px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .subject-switcher button {
@@ -1611,8 +1689,11 @@ kbd {
 
   .study-shell {
     width: min(100% - 24px, 920px);
-    padding: 10px 0 14px;
+    height: 100dvh;
+    min-height: 0;
+    padding: max(8px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom));
     gap: 10px;
+    overflow: hidden;
   }
 
   .study-header {
@@ -1640,7 +1721,9 @@ kbd {
   }
 
   .flashcard {
-    height: clamp(440px, calc(100dvh - 190px), 620px);
+    height: 100%;
+    min-height: 0;
+    align-self: stretch;
   }
 
   .flashcard__face {
@@ -1679,8 +1762,10 @@ kbd {
   }
 
   .study-action-stack {
-    bottom: 10px;
+    position: relative;
+    bottom: auto;
     gap: 8px;
+    margin-top: 4px;
   }
 
   .study-control {
@@ -1737,12 +1822,14 @@ kbd {
 
 /* Keep the front-face labels anchored to the card edges regardless of the
    prompt length. */
-.flashcard__front:not(.flashcard__front--image) {
+.flashcard__front:not(.flashcard__front--image),
+.flashcard__front--image.flashcard__front--with-chrome {
   grid-template-rows: minmax(0, 1fr);
   justify-content: stretch;
 }
 
-.flashcard__front:not(.flashcard__front--image) > .card-meta {
+.flashcard__front:not(.flashcard__front--image) > .card-meta,
+.flashcard__front--image.flashcard__front--with-chrome > .card-meta {
   position: absolute;
   top: clamp(24px, 4vw, 34px);
   right: clamp(24px, 4vw, 34px);
@@ -1750,8 +1837,339 @@ kbd {
   width: auto;
 }
 
-.flashcard__front:not(.flashcard__front--image) > .reveal-hint {
+.flashcard__front:not(.flashcard__front--image) > .reveal-hint,
+.flashcard__front--image.flashcard__front--with-chrome > .reveal-hint {
   position: absolute;
   bottom: clamp(24px, 4vw, 34px);
   left: clamp(24px, 4vw, 34px);
+}
+
+/* Interactive "Show how" view for A-Math answer cards. */
+.flashcard:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 4px;
+}
+
+.back-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.show-how-button,
+.examples-button,
+.equation-reset {
+  border: 1px solid rgba(126, 163, 255, 0.42);
+  background: rgba(126, 163, 255, 0.12);
+  color: #c8d6ff;
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 800;
+}
+
+.show-how-button,
+.examples-button {
+  min-height: 42px;
+  padding: 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 13px;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.show-how-button:hover,
+.show-how-button:focus-visible,
+.examples-button:hover,
+.examples-button:focus-visible,
+.equation-reset:hover,
+.equation-reset:focus-visible {
+  border-color: #98adff;
+  background: rgba(126, 163, 255, 0.22);
+  outline: none;
+}
+
+.show-how-button:hover,
+.examples-button:hover {
+  transform: translateY(-1px);
+}
+
+.examples-button {
+  border-color: rgba(88, 200, 125, 0.48);
+  background: rgba(74, 181, 110, 0.14);
+  color: #bceacb;
+}
+
+.examples-button:hover,
+.examples-button:focus-visible {
+  border-color: rgba(116, 226, 153, 0.75);
+  background: rgba(74, 181, 110, 0.24);
+}
+
+.equation-lab {
+  width: 100%;
+  max-width: 820px;
+  min-height: 0;
+  margin: auto;
+  padding: 14px 0 10px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  color: #f7f9ff;
+}
+
+.equation-lab__intro {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(260px, 1.2fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.equation-lab__intro > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.equation-lab__intro small {
+  color: #98adff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.equation-lab__intro strong {
+  color: #f7f9ff;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.2;
+}
+
+.equation-lab__formula {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  color: #dfe7ff;
+}
+
+.equation-lab__formula::-webkit-scrollbar {
+  display: none;
+}
+
+.equation-lab__formula .katex-display {
+  margin: 0;
+  text-align: right;
+}
+
+.equation-lab__formula .katex-display > .katex {
+  text-align: right;
+}
+
+.equation-lab__formula .katex {
+  font-size: clamp(0.78rem, 1.55vw, 1rem);
+}
+
+.equation-lab__workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(180px, 0.78fr);
+  gap: 14px;
+}
+
+.equation-graph,
+.equation-controls {
+  min-height: 0;
+  border: 1px solid rgba(126, 163, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(7, 14, 30, 0.34);
+}
+
+.equation-graph {
+  position: relative;
+  overflow: hidden;
+}
+
+.equation-graph svg {
+  width: 100%;
+  height: 100%;
+  min-height: 210px;
+  display: block;
+}
+
+.graph-grid,
+.graph-axis {
+  vector-effect: non-scaling-stroke;
+}
+
+.graph-grid {
+  stroke: rgba(161, 178, 215, 0.09);
+  stroke-width: 1;
+}
+
+.graph-axis {
+  stroke: rgba(210, 221, 246, 0.3);
+  stroke-width: 1.2;
+}
+
+.graph-curve {
+  fill: none;
+  stroke: #7ea3ff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.graph-point {
+  fill: #f5b94c;
+  stroke: #19243e;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.equation-graph__legend {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px;
+  color: #aeb9d0;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.equation-graph__legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.equation-graph__legend i {
+  width: 14px;
+  height: 3px;
+  border-radius: 99px;
+}
+
+.equation-controls {
+  padding: 13px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.equation-control {
+  display: grid;
+  gap: 5px;
+}
+
+.equation-control > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #9faac1;
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.equation-control strong {
+  min-width: 34px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(126, 163, 255, 0.12);
+  color: #dce5ff;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.equation-control input[type="range"] {
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  accent-color: #7ea3ff;
+  cursor: pointer;
+}
+
+.equation-reset {
+  min-height: 30px;
+  margin-top: 1px;
+  border-radius: 9px;
+  font-size: 0.66rem;
+}
+
+@media (max-width: 700px) {
+  .back-actions .reveal-hint {
+    font-size: 0.68rem;
+  }
+
+  .show-how-button,
+  .examples-button {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.7rem;
+  }
+
+  .equation-lab {
+    gap: 9px;
+  }
+
+  .equation-lab__intro {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .equation-lab__formula .katex-display,
+  .equation-lab__formula .katex-display > .katex {
+    text-align: left;
+  }
+
+  .equation-lab__workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(150px, 1fr) auto;
+    gap: 8px;
+  }
+
+  .equation-graph svg {
+    min-height: 150px;
+  }
+
+  .equation-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 7px 12px;
+  }
+
+  .equation-reset {
+    align-self: end;
+  }
+}
+
+@media (max-width: 420px) {
+  .back-actions .reveal-hint {
+    display: none;
+  }
+
+  .back-actions {
+    justify-content: flex-end;
+  }
+
+  .equation-lab__intro strong {
+    font-size: 0.9rem;
+  }
+
+  .equation-lab__formula .katex {
+    font-size: 0.72rem;
+  }
 }

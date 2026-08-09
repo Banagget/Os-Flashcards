@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BlockMath } from "react-katex";
 import { chapters, type Flashcard } from "../data/flashcards";
+import { EquationVisual } from "./EquationVisual";
 
 interface StudyScreenProps {
   title: string;
   modeKey: string;
   cards: Flashcard[];
   memorised: Set<string>;
-  initialPosition: number;
   shuffleEnabled: boolean;
   onShuffleChange: (enabled: boolean) => void;
   onPositionChange: (modeKey: string, position: number) => void;
   onMark: (cardId: string, memorised: boolean) => void;
+  onOpenExamples: (card: Flashcard) => void;
+  exitLabel: string;
   onExit: () => void;
 }
 
@@ -31,27 +33,43 @@ function twoDigits(value: number) {
   return String(value).padStart(2, "0");
 }
 
+function RichText({ children }: { children: string }) {
+  return children.split(/(\*\*[^*]+\*\*)/g).map((part, partIndex) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={`${part}-${partIndex}`}>{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    ),
+  );
+}
+
 export function StudyScreen({
   title,
   modeKey,
   cards,
   memorised,
-  initialPosition,
   shuffleEnabled,
   onShuffleChange,
   onPositionChange,
   onMark,
+  onOpenExamples,
+  exitLabel,
   onExit,
 }: StudyScreenProps) {
   const normalOrder = useMemo(() => [...cards], [cards]);
-  const [order, setOrder] = useState(() => (shuffleEnabled ? randomise(cards) : [...cards]));
-  const [index, setIndex] = useState(() => Math.min(initialPosition, Math.max(cards.length - 1, 0)));
+  const [order, setOrder] = useState(() => [...cards]);
+  const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [focusEnabled, setFocusEnabled] = useState(false);
+  const [showHow, setShowHow] = useState(false);
 
   const current = order[index];
   const unmasteredCards = normalOrder.filter((card) => !memorised.has(card.id));
   const unmasteredCount = unmasteredCards.length;
+
+  useEffect(() => {
+    setShowHow(false);
+  }, [current?.id, revealed]);
 
   const goTo = useCallback(
     (nextIndex: number) => {
@@ -67,18 +85,21 @@ export function StudyScreen({
 
   const reshuffle = useCallback(() => {
     onShuffleChange(true);
-    const activeCards = focusEnabled
-      ? normalOrder.filter((card) => !memorised.has(card.id))
-      : normalOrder;
+    const activeCards = focusEnabled ? order : normalOrder;
     setOrder(randomise(activeCards));
     setIndex(0);
     setRevealed(false);
     onPositionChange(modeKey, 0);
-  }, [focusEnabled, memorised, modeKey, normalOrder, onPositionChange, onShuffleChange]);
+  }, [focusEnabled, modeKey, normalOrder, onPositionChange, onShuffleChange, order]);
 
   const toggleShuffle = useCallback(() => {
     const nextEnabled = !shuffleEnabled;
-    const activeCards = focusEnabled ? unmasteredCards : normalOrder;
+    const focusCardIds = new Set(order.map((card) => card.id));
+    const activeCards = focusEnabled
+      ? nextEnabled
+        ? order
+        : normalOrder.filter((card) => focusCardIds.has(card.id))
+      : normalOrder;
     onShuffleChange(nextEnabled);
 
     if (nextEnabled) {
@@ -92,7 +113,7 @@ export function StudyScreen({
       setIndex(restoredIndex);
       onPositionChange(modeKey, restoredIndex);
     }
-  }, [current?.id, focusEnabled, modeKey, normalOrder, onPositionChange, onShuffleChange, shuffleEnabled, unmasteredCards]);
+  }, [current?.id, focusEnabled, modeKey, normalOrder, onPositionChange, onShuffleChange, order, shuffleEnabled]);
 
   const toggleFocus = useCallback(() => {
     const nextEnabled = !focusEnabled;
@@ -114,27 +135,6 @@ export function StudyScreen({
   }, [modeKey, normalOrder, onPositionChange, onShuffleChange]);
 
   useEffect(() => {
-    if (!focusEnabled) return;
-    const nextOrder = order.filter((card) => !memorised.has(card.id));
-    if (nextOrder.length === order.length) return;
-
-    if (nextOrder.length === 0) {
-      setFocusEnabled(false);
-      setOrder(shuffleEnabled ? randomise(normalOrder) : normalOrder);
-      setIndex(0);
-      setRevealed(false);
-      onPositionChange(modeKey, 0);
-      return;
-    }
-
-    const nextIndex = Math.min(index, nextOrder.length - 1);
-    setOrder(nextOrder);
-    setIndex(nextIndex);
-    setRevealed(false);
-    onPositionChange(modeKey, nextIndex);
-  }, [focusEnabled, index, memorised, modeKey, normalOrder, onPositionChange, order, shuffleEnabled]);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
@@ -149,6 +149,12 @@ export function StudyScreen({
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
         goTo(index + 1);
+      } else if (event.key === "ArrowUp" && current) {
+        event.preventDefault();
+        if (!event.repeat) onMark(current.id, !memorised.has(current.id));
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (!event.repeat) toggleFocus();
       } else if (event.key.toLowerCase() === "m" && current) {
         onMark(current.id, !memorised.has(current.id));
       } else if (event.key.toLowerCase() === "s") {
@@ -158,7 +164,7 @@ export function StudyScreen({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [current, goTo, index, memorised, onMark, reshuffle]);
+  }, [current, goTo, index, memorised, onMark, reshuffle, toggleFocus]);
 
   if (!current) {
     return (
@@ -182,13 +188,13 @@ export function StudyScreen({
   return (
     <main className="study-shell" aria-label={`${title} study session`}>
       <header className="study-header">
-        <button className="icon-button" onClick={onExit} aria-label="Return to dashboard">
+        <button className="icon-button" onClick={onExit} aria-label={exitLabel}>
           <span aria-hidden="true">←</span>
         </button>
 
         <div className="study-heading">
           <span className="eyebrow">
-            {current.subject === "chem" ? "TOPIC" : "CH"} {twoDigits(Math.max(chapterNumber, 1))}
+            {current.subject === "amath" ? "PAGE" : current.subject === "emath" || current.subject === "physicsKeywords" ? "CH" : "TOPIC"} {twoDigits(Math.max(chapterNumber, 1))}
           </span>
           <h1>{current.chapter}</h1>
         </div>
@@ -218,15 +224,22 @@ export function StudyScreen({
         <span className="study-progress__current" style={{ left: `${progress}%` }} />
       </div>
 
-      <button
-        className={`flashcard ${revealed ? "is-revealed" : ""}`}
+      <article
+        className={`flashcard ${revealed ? "is-revealed" : ""} ${showHow ? "is-showing-how" : ""}`}
         onClick={() => setRevealed((value) => !value)}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
+          event.preventDefault();
+          setRevealed((value) => !value);
+        }}
+        role="button"
+        tabIndex={0}
         aria-label={revealed ? "Show question" : "Reveal answer"}
         aria-pressed={revealed}
       >
         <span className="flashcard__inner">
-          <span className={`flashcard__face flashcard__front ${current.questionImage ? "flashcard__front--image" : ""}`}>
-            {!current.questionImage && (
+          <span className={`flashcard__face flashcard__front ${current.questionImage && !current.question ? "flashcard__front--image" : ""} ${current.showImageChrome ? "flashcard__front--with-chrome" : ""}`}>
+            {(!current.questionImage || current.question || current.showImageChrome) && (
               <span className="card-meta">
                 <span>{current.title}</span>
                 <span className={`card-status ${isMemorised ? "is-mastered" : ""}`}>
@@ -236,9 +249,12 @@ export function StudyScreen({
               </span>
             )}
 
-            <span className={`prompt ${current.questionImage ? "prompt--image" : current.questionMath ? "prompt--math" : ""}`}>
+            <span className={`prompt ${current.questionImage ? "prompt--image" : current.questionMath ? "prompt--math" : ""} ${current.questionImage && current.question ? "prompt--with-image" : ""} ${current.questionTone ? `prompt--${current.questionTone}` : ""}`}>
               {current.questionImage ? (
-                <img src={new URL(current.questionImage, document.baseURI).toString()} alt={current.questionImageAlt ?? ""} />
+                <>
+                  {current.question && <span className="prompt-copy">{current.question}</span>}
+                  <img src={new URL(current.questionImage, document.baseURI).toString()} alt={current.questionImageAlt ?? ""} />
+                </>
               ) : current.questionMath ? (
                 <BlockMath math={current.questionMath} />
               ) : (
@@ -246,7 +262,7 @@ export function StudyScreen({
               )}
             </span>
 
-            {!current.questionImage && (
+            {(!current.questionImage || current.question || current.showImageChrome) && (
               <span className="reveal-hint">
                 <span aria-hidden="true">↻</span>
                 Tap to reveal answer
@@ -260,37 +276,76 @@ export function StudyScreen({
               <span>{current.title}</span>
             </span>
 
-            <span className="answer-content">
-              {current.formula && (
-                <span className="formula-display"><BlockMath math={current.formula} /></span>
-              )}
-              <span className="answer-copy">{current.explanation}</span>
+            {showHow ? (
+              <EquationVisual card={current} />
+            ) : current.answerImage ? (
+              <span className="answer-content answer-content--image">
+                <img
+                  src={new URL(current.answerImage, document.baseURI).toString()}
+                  alt={current.answerImageAlt ?? ""}
+                />
+              </span>
+            ) : (
+              <span className="answer-content">
+                {current.formula && (
+                  <span className="formula-display"><BlockMath math={current.formula} /></span>
+                )}
+                <span className="answer-copy"><RichText>{current.explanation}</RichText></span>
 
-              {(current.conditions || current.commonMistake || current.example) && (
-                <span className="answer-notes">
-                  {current.conditions && (
-                    <span><strong>Conditions</strong>{current.conditions}</span>
-                  )}
-                  {current.commonMistake && (
-                    <span><strong>Watch out</strong>{current.commonMistake}</span>
-                  )}
-                  {current.example && (
-                    <span className="answer-example">
-                      <strong>Example</strong>
-                      <span><BlockMath math={current.example} /></span>
-                    </span>
-                  )}
-                </span>
-              )}
-            </span>
+                {(current.conditions || current.commonMistake || current.example) && (
+                  <span className="answer-notes">
+                    {current.conditions && (
+                      <span><strong>Conditions</strong>{current.conditions}</span>
+                    )}
+                    {current.commonMistake && (
+                      <span><strong>Watch out</strong>{current.commonMistake}</span>
+                    )}
+                    {current.example && (
+                      <span className="answer-example">
+                        <strong>Example</strong>
+                        <span><BlockMath math={current.example} /></span>
+                      </span>
+                    )}
+                  </span>
+                )}
+              </span>
+            )}
 
-            <span className="reveal-hint">
-              <span aria-hidden="true">↻</span>
-              Tap to flip back
+            <span className="back-actions">
+              <span className="reveal-hint">
+                <span aria-hidden="true">↻</span>
+                Tap to flip back
+              </span>
+              {current.subject === "amath" && !current.memoryOnly && (
+                <button
+                  type="button"
+                  className="show-how-button"
+                  aria-pressed={showHow}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setShowHow((value) => !value);
+                  }}
+                >
+                  <span aria-hidden="true">{showHow ? "←" : "↗"}</span>
+                  {showHow ? "Back to answer" : "Show how"}
+                </button>
+              )}
+              {current.examples?.length && (
+                <button
+                  type="button"
+                  className="examples-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onOpenExamples(current);
+                  }}
+                >
+                  Examples <span aria-hidden="true">→</span>
+                </button>
+              )}
             </span>
           </span>
         </span>
-      </button>
+      </article>
 
       <div className="study-action-stack">
         <nav className="study-controls" aria-label="Flashcard controls">
