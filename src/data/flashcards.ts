@@ -40,6 +40,8 @@ export const chapters: Chapter[] = [
   { name: "Qualitative Analysis", slug: "qa", subject: "chem" },
   { name: "Crude oil", slug: "crude-oil", subject: "chem" },
   { name: "Polymer", slug: "polymer", subject: "chem" },
+  { name: "Salt preparation", slug: "salt-preparation", subject: "chem" },
+  { name: "Process Conditions", slug: "process-conditions", subject: "chem" },
   { name: "EM spectrum applications", slug: "em-spectrum-applications", subject: "phys" },
   ...physicsKeywordChapters,
 ];
